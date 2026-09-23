@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "agent-messaging",
+  "description": "Claude Code and Codex cross-session messaging plugins.",
+  "owner": {
+    "name": "hongbietcode",
+    "url": "https://github.com/hongbietcode"
+  },
+  "plugins": [
+    {
+      "name": "agent-messaging",
+      "description": "Message local Claude Code and Codex panels with one planner and one worker per team.",
+      "source": "./",
+      "category": "productivity",
+      "tags": ["agents", "messaging", "claude", "codex"]
+    }
+  ]
+}
