@@ -1,0 +1,6 @@
+{
+  "name": "agent-messaging",
+  "version": "0.1.0",
+  "description": "Message local Claude Code and Codex panels with one planner and one worker per team.",
+  "author": {"name": "Local developer"}
+}

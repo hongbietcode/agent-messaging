@@ -1,0 +1,22 @@
+{
+  "name": "agent-messaging",
+  "version": "0.1.0",
+  "description": "Message local Claude Code and Codex panels with planner and worker roles.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Messaging",
+    "shortDescription": "Connect Claude and Codex panels.",
+    "longDescription": "Assign planner and worker roles, send tasks across Claude and Codex, and reply to the originating session.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": ["Write"],
+    "defaultPrompt": [
+      "Join this panel as planner in team demo.",
+      "Join this panel as worker in team demo.",
+      "Send a message to the worker."
+    ]
+  }
+}
