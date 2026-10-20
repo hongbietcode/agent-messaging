@@ -1,22 +1,24 @@
 {
   "name": "agent-messaging",
-  "version": "0.1.0",
-  "description": "Message local Claude Code and Codex panels with planner and worker roles.",
+  "version": "0.2.0",
+  "description": "Planner spawns and coordinates Claude, Codex, OpenCode and other coding agents in Herdr panes.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent Messaging",
-    "shortDescription": "Connect Claude and Codex panels.",
-    "longDescription": "Assign planner and worker roles, send tasks across Claude and Codex, and reply to the originating session.",
+    "shortDescription": "Coordinate worker agents in Herdr panes.",
+    "longDescription": "Spawn Claude, Codex or OpenCode workers in Herdr panes, assign tasks, wait for them, and review their output from one planner.",
     "developerName": "Local developer",
     "category": "Productivity",
-    "capabilities": ["Write"],
+    "capabilities": [
+      "Write"
+    ],
     "defaultPrompt": [
-      "Join this panel as planner in team demo.",
-      "Join this panel as worker in team demo.",
-      "Send a message to the worker."
+      "Spawn a codex worker named be in team demo.",
+      "Send the worker its task and wait.",
+      "Show the team's status."
     ]
   }
 }
