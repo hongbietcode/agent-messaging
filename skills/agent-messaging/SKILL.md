@@ -21,27 +21,46 @@ path. It only wraps the Herdr CLI; every command prints Herdr JSON or text.
 
 | Command | Purpose |
 | --- | --- |
-| `spawn <team> <name> <kind> [right\|down] [-- args]` | Split a pane next to the team, `herdr agent start <team>-<name> --kind <kind>`. Kind: `codex`, `opencode`, `claude`, … (`herdr agent start --help`). |
+| `spawn <team> <name> [kind] [-- args]` | Start `<team>-<name>` in the team workspace. Default kind `claude` with `--model sonnet --effort high`; other kinds: `codex`, `opencode`, … (`herdr agent start --help`). Native args after `--` replace the default. |
 | `ls <team>` | Roster with live status: `idle`, `working`, `blocked`, `done`, `unknown`. |
 | `send <team> <name> '<task>'` | Submit a task and return immediately (parallel work). |
 | `ask <team> <name> '<task>' [ms]` | Submit, wait until it settles, print recent output. |
 | `wait <team> [ms]` | Wait until every worker settles, then print the roster. |
 | `read <team> <name> [lines]` | Read a worker's recent output. |
-| `stop <team> [name]` | Close the team's worker panes, or one worker's. |
+| `stop <team> [name]` | Close the whole team workspace, or one worker's pane. |
 
 Tasks are prefixed with the planner pane, the team, and a request for a
 closing summary (result, changed files, checks, blockers).
+
+Workers never share the planner's tab. Each team gets its own Herdr workspace
+labelled `team:<team>`, filled as a 2x2 grid: at most 4 workers per tab, then
+a new tab. A stopped worker's slot is refilled first.
+
+## Choose the model per task
+
+Pick the Claude model and effort from the task's complexity and pass them
+after `--`:
+
+| Task | Args |
+| --- | --- |
+| Mechanical: list, search, read, rename, format, run a known command | `-- --model haiku --effort low` |
+| Normal: implement a scoped change, write tests, fix a clear bug (default) | none (`sonnet`, `high`) |
+| Hard: cross-module design, unclear root cause, security, large refactor, final review | `-- --model opus --effort high` (`xhigh` when stakes are high) |
+
+Example: `spawn demo scan claude -- --model haiku --effort low`. Use a
+different worker for a different tier rather than switching a running one.
 
 ## Planner loop
 
 1. Split the user's objective into scoped tasks with acceptance criteria and
    pick one worker per task. Use separate files or `herdr worktree` for
    parallel edits to avoid conflicts.
-2. `spawn` the workers the user asked for, then `send` each its task, or `ask`
-   for a single sequential task.
+2. `spawn` the workers the user asked for, choosing model and effort per task,
+   then `send` each its task, or `ask` for a single sequential task.
 3. `wait`, then `read` each worker. Review the evidence against the acceptance
    criteria; `send` corrections to the same worker when needed.
-4. Report the combined result to the user, then `stop` the workers you spawned.
+4. Report the combined result to the user, then `stop <team>` to close the
+   team workspace.
 
 ## Rules
 

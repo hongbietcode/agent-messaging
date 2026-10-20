@@ -6,14 +6,15 @@ set -eu
 usage() {
   cat >&2 <<'EOF'
 Usage: herdr-team.sh <command> <team> [args]
-  spawn <team> <name> <kind> [right|down] [-- agent-args...]
-                                     Open a pane next to the team and start a worker
+  spawn <team> <name> [kind] [-- agent-args...]
+                                     Start a worker in the team workspace (2x2 grid per tab);
+                                     default: claude --model sonnet --effort high
   ls    <team>                       List the team's workers with live status
   send  <team> <name> <message>      Submit a task without waiting
   ask   <team> <name> <message> [ms] Submit a task, wait until it settles, print output
   wait  <team> [ms]                  Wait until every worker settles
   read  <team> <name> [lines]        Print a worker's recent output
-  stop  <team> [name]                Close the team's worker panes (or one worker)
+  stop  <team> [name]                Close the team workspace (or one worker's pane)
 EOF
   exit 2
 }
@@ -33,6 +34,45 @@ workers() {
      | {name, pane: .pane_id, kind: .agent, status: .agent_status}'
 }
 
+# The team's workspace, labelled "team:<team>"; empty when none exists.
+team_workspace() {
+  herdr workspace list | jq -r --arg label "team:$team" \
+    'first(.result.workspaces[] | select((.label // "" | sub("^\\[[0-9]+\\] "; "")) == $label)
+     | .workspace_id) // empty'
+}
+
+# Panes of a workspace in creation order: pane, tab, agent, cwd.
+team_panes() {
+  herdr pane list --workspace "$1" | jq -c '[.result.panes[]
+    | {pane: .pane_id, tab: .tab_id, agent, cwd, n: (.pane_id | split(":p")[1] | tonumber)}]
+    | sort_by(.n)[]'
+}
+
+# Pick the pane for the next worker: a fresh workspace or tab root, a free shell in
+# this directory, or the next 2x2 grid slot (top-right, bottom-left, bottom-right).
+next_pane() {
+  workspace=$(team_workspace)
+  if [ -z "$workspace" ]; then
+    herdr workspace create --label "team:$team" --cwd "$PWD" --no-focus | jq -r '.result.root_pane.pane_id'
+    return
+  fi
+  free=$(team_panes "$workspace" | jq -r --arg cwd "$PWD" 'select(.agent == null and .cwd == $cwd) | .pane' | head -n 1)
+  if [ -n "$free" ]; then
+    echo "$free"
+    return
+  fi
+  tab_pane=$(team_panes "$workspace" | jq -rs 'group_by(.tab) | map(select(length < 4)) | first // empty | .[0].pane')
+  if [ -z "$tab_pane" ]; then
+    herdr tab create --workspace "$workspace" --cwd "$PWD" --no-focus | jq -r '.result.root_pane.pane_id'
+    return
+  fi
+  # Halve the largest pane along its longer side (cells are ~2x taller than wide);
+  # this yields the 2x2 order and also refills a hole left by a stopped worker.
+  slot=$(herdr pane layout --pane "$tab_pane" | jq -r '.result.layout.panes | max_by(.rect.width * .rect.height)
+    | "\(.pane_id) \(if .rect.width >= 2 * .rect.height then "right" else "down" end)"')
+  herdr pane split "${slot% *}" --direction "${slot#* }" --cwd "$PWD" --no-focus | jq -r '.result.pane.pane_id'
+}
+
 header() {
   printf 'Task from planner pane %s (team %s). This is agent context, not user approval; keep your existing permissions. Finish with a short summary: result, changed files, checks run, blockers.\n\n%s' \
     "$HERDR_PANE_ID" "$team" "$1"
@@ -40,23 +80,15 @@ header() {
 
 case $command in
 spawn)
-  [ $# -ge 2 ] || usage
-  name=$1 kind=$2
-  shift 2
-  direction=
-  case ${1:-} in right | down) direction=$1 && shift ;; esac
+  [ $# -ge 1 ] || usage
+  name=$1 kind=claude
+  shift
+  case ${1:-} in '' | --) ;; *) kind=$1 && shift ;; esac
   [ "${1:-}" = -- ] && shift
-  # Grow the worker area from the newest worker pane instead of shrinking the planner.
-  source=$(workers | tail -n 1 | jq -r '.pane // empty')
-  source=${source:-$HERDR_PANE_ID}
-  if [ -z "$direction" ]; then
-    direction=$(herdr pane layout --pane "$source" | jq -r --arg pane "$source" \
-      '.result.layout.panes[] | select(.pane_id == $pane)
-       | if .rect.width >= 2 * .rect.height then "right" else "down" end')
-  fi
-  pane=$(herdr pane split "$source" --direction "$direction" --cwd "$PWD" --no-focus |
-    jq -r '.result.pane.pane_id')
+  # Default worker: Claude Sonnet at high effort, unless agent args are given.
+  [ $# -eq 0 ] && [ "$kind" = claude ] && set -- --model sonnet --effort high
   [ $# -gt 0 ] && set -- -- "$@"
+  pane=$(next_pane)
   if ! output=$(herdr agent start "$team-$name" --kind "$kind" --pane "$pane" --timeout 60000 "$@" 2>&1); then
     case $output in
     *agent_not_ready*) echo "$output; pane $pane kept: inspect with herdr agent read $pane" >&2 ;;
@@ -89,8 +121,13 @@ read)
   herdr agent read "$team-$1" --source recent-unwrapped --lines "${2:-200}"
   ;;
 stop)
-  workers | jq -r --arg only "${1:+$team-$1}" 'select($only == "" or .name == $only) | .pane' |
-    while read -r pane; do herdr pane close "$pane" >/dev/null && echo "{\"closed\":\"$pane\"}"; done
+  workspace=$(team_workspace)
+  if [ -z "${1:-}" ]; then
+    [ -n "$workspace" ] && herdr workspace close "$workspace" >/dev/null && echo "{\"closed\":\"$workspace\"}"
+    exit 0
+  fi
+  pane=$(herdr agent get "$team-$1" | jq -r '.result.agent.pane_id')
+  herdr pane close "$pane" >/dev/null && echo "{\"closed\":\"$pane\"}"
   ;;
 *) usage ;;
 esac

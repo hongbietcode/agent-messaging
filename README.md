@@ -38,20 +38,23 @@ Script có thể gọi trực tiếp:
 
 ```bash
 T="$HOME/code/agent-messaging/skills/agent-messaging/scripts/herdr-team.sh"
-$T spawn demo be codex            # pane mới + herdr agent start demo-be --kind codex
-$T spawn demo fe opencode
+$T spawn demo be                  # claude --model sonnet --effort high (mặc định)
+$T spawn demo scan claude -- --model haiku --effort low   # task đơn giản
+$T spawn demo fe opencode         # kind khác
 $T send demo be 'Implement POST /login; chạy test liên quan.'
 $T send demo fe 'Làm form đăng nhập gọi POST /login.'
 $T wait demo                      # chờ mọi worker idle/done/blocked
 $T read demo be                   # đọc kết quả
 $T ask demo be 'Sửa lỗi review: ...'   # gửi và chờ một task
 $T ls demo
-$T stop demo                      # đóng các pane worker của team
+$T stop demo                      # đóng workspace của team
 ```
 
-`spawn` tự chọn hướng chia (phải nếu pane rộng, xuống nếu hẹp) và chia từ pane
-worker mới nhất để không thu nhỏ pane planner; có thể ép `right`/`down`.
-Tham số riêng của agent đặt sau `--`.
+Worker không mở chung tab với planner: mỗi team có workspace riêng
+`team:<team>`, xếp lưới 2x2 (tối đa 4 worker mỗi tab, đầy thì mở tab mới, ô
+trống do `stop` được lấp trước). Worker mặc định là Claude Sonnet effort high;
+planner chọn `haiku`/`sonnet`/`opus` và effort theo độ phức tạp của task, truyền
+sau `--` (xem bảng trong SKILL.md).
 
 ## Lưu ý
 
