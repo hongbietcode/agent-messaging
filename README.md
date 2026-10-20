@@ -40,6 +40,7 @@ Script có thể gọi trực tiếp:
 T="$HOME/code/agent-messaging/skills/agent-messaging/scripts/herdr-team.sh"
 $T spawn demo be                  # claude --model sonnet --effort high (mặc định)
 $T spawn demo scan claude -- --model haiku --effort low   # task đơn giản
+$T spawn demo cx codex            # codex -m gpt-6-luna, reasoning effort max (mặc định)
 $T spawn demo fe opencode         # kind khác
 $T send demo be 'Implement POST /login; chạy test liên quan.'
 $T send demo fe 'Làm form đăng nhập gọi POST /login.'

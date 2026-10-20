@@ -21,7 +21,7 @@ path. It only wraps the Herdr CLI; every command prints Herdr JSON or text.
 
 | Command | Purpose |
 | --- | --- |
-| `spawn <team> <name> [kind] [-- args]` | Start `<team>-<name>` in the team workspace. Default kind `claude` with `--model sonnet --effort high`; other kinds: `codex`, `opencode`, … (`herdr agent start --help`). Native args after `--` replace the default. |
+| `spawn <team> <name> [kind] [-- args]` | Start `<team>-<name>` in the team workspace. Default kind `claude` with `--model sonnet --effort high`; `codex` defaults to `-m gpt-6-luna -c model_reasoning_effort=max`; other kinds: `opencode`, … (`herdr agent start --help`). Native args after `--` replace the default. |
 | `ls <team>` | Roster with live status: `idle`, `working`, `blocked`, `done`, `unknown`. |
 | `send <team> <name> '<task>'` | Submit a task and return immediately (parallel work). |
 | `ask <team> <name> '<task>' [ms]` | Submit, wait until it settles, print recent output. |

@@ -85,8 +85,13 @@ spawn)
   shift
   case ${1:-} in '' | --) ;; *) kind=$1 && shift ;; esac
   [ "${1:-}" = -- ] && shift
-  # Default worker: Claude Sonnet at high effort, unless agent args are given.
-  [ $# -eq 0 ] && [ "$kind" = claude ] && set -- --model sonnet --effort high
+  # Default models unless agent args are given: Claude Sonnet high, Codex Luna max.
+  if [ $# -eq 0 ]; then
+    case $kind in
+    claude) set -- --model sonnet --effort high ;;
+    codex) set -- -m gpt-6-luna -c model_reasoning_effort=max ;;
+    esac
+  fi
   [ $# -gt 0 ] && set -- -- "$@"
   pane=$(next_pane)
   if ! output=$(herdr agent start "$team-$name" --kind "$kind" --pane "$pane" --timeout 60000 "$@" 2>&1); then
@@ -123,7 +128,10 @@ read)
 stop)
   workspace=$(team_workspace)
   if [ -z "${1:-}" ]; then
-    [ -n "$workspace" ] && herdr workspace close "$workspace" >/dev/null && echo "{\"closed\":\"$workspace\"}"
+    if [ -n "$workspace" ]; then
+      herdr workspace close "$workspace" >/dev/null
+      echo "{\"closed\":\"$workspace\"}"
+    fi
     exit 0
   fi
   pane=$(herdr agent get "$team-$1" | jq -r '.result.agent.pane_id')
