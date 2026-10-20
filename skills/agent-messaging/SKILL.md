@@ -43,11 +43,11 @@ after `--`:
 
 | Task | Args |
 | --- | --- |
-| Mechanical: list, search, read, rename, format, run a known command | `-- --model haiku --effort low` |
+| Mechanical: list, search, read, rename, format, run a known command | `-- --model haiku --effort xhigh` (`max` for heavier mechanical work; never `high` or lower) |
 | Normal: implement a scoped change, write tests, fix a clear bug (default) | none (`sonnet`, `high`) |
 | Hard: cross-module design, unclear root cause, security, large refactor, final review | `-- --model opus --effort high` (`xhigh` when stakes are high) |
 
-Example: `spawn demo scan claude -- --model haiku --effort low`. Use a
+Example: `spawn demo scan claude -- --model haiku --effort xhigh`. Use a
 different worker for a different tier rather than switching a running one.
 
 ## Planner loop
