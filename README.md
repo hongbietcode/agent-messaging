@@ -31,22 +31,23 @@ dùng manifest `.codex-plugin/plugin.json` (`codex plugin add agent-messaging@pe
 
 Trong pane planner:
 
-> Dùng agent-messaging, team demo: spawn một codex tên be và một opencode tên
-> fe, giao be làm API đăng nhập, fe làm form đăng nhập, chờ xong thì review.
+> Dùng agent-messaging, team demo: audit song song hai package độc lập svc-a và
+> svc-b, mỗi package một worker; tự xác nhận phát hiện và sửa, rồi nhờ một codex
+> tên cx review độc lập bản sửa.
 
 Script có thể gọi trực tiếp:
 
 ```bash
 T="$HOME/code/agent-messaging/skills/agent-messaging/scripts/herdr-team.sh"
-$T spawn demo be                  # claude --model sonnet --effort high (mặc định)
-$T spawn demo scan claude -- --model haiku --effort xhigh # task đơn giản; haiku luôn effort > high
+$T spawn demo a                   # claude --model sonnet --effort high (mặc định)
+$T spawn demo b opencode          # kind khác
 $T spawn demo cx codex            # codex -m gpt-6-luna, reasoning effort max (mặc định)
-$T spawn demo fe opencode         # kind khác
-$T send demo be 'Implement POST /login; chạy test liên quan.'
-$T send demo fe 'Làm form đăng nhập gọi POST /login.'
+# task cơ học: $T spawn demo scan claude -- --model haiku --effort xhigh (haiku luôn effort > high)
+$T send demo a 'Audit packages/svc-a: secret hardcode, SQL không an toàn; liệt kê file:dòng.'
+$T send demo b 'Audit packages/svc-b: secret hardcode, SQL không an toàn; liệt kê file:dòng.'
 $T wait demo                      # chờ mọi worker idle/done/blocked
-$T read demo be                   # đọc kết quả
-$T ask demo be 'Sửa lỗi review: ...'   # gửi và chờ một task
+$T read demo a                    # đọc tóm tắt; tự mở file:dòng để xác nhận
+$T ask demo cx 'Review git diff của bản sửa, chỉ báo lỗi.' 600000   # gửi và chờ một task
 $T ls demo
 $T stop demo                      # đóng workspace của team
 ```
@@ -56,6 +57,12 @@ Worker không mở chung tab với planner: mỗi team có workspace riêng
 trống do `stop` được lấp trước). Worker mặc định là Claude Sonnet effort high;
 planner chọn `haiku`/`sonnet`/`opus` và effort theo độ phức tạp của task, truyền
 sau `--` (xem bảng trong SKILL.md).
+
+Mặc định planner tự làm. Chỉ spawn khi việc tách được theo ngữ cảnh (worker
+cần ít thông tin từ nhau, trả kết quả gọn), khi ngữ cảnh planner sắp phình, khi
+cần runtime/model khác (reviewer độc lập), hoặc khi người dùng yêu cầu. Việc
+dính chặt nhau (API và form của cùng tính năng) để planner làm hoặc giao chung
+một worker. Nghiệm thu bằng `git diff` và test, không chỉ dựa vào tóm tắt.
 
 ## Lưu ý
 

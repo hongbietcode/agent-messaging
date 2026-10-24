@@ -50,15 +50,29 @@ after `--`:
 Example: `spawn demo scan claude -- --model haiku --effort xhigh`. Use a
 different worker for a different tier rather than switching a running one.
 
+## When to spawn
+
+Default: the planner does the work itself, inline. Spawn workers only for:
+
+- independent parallel tasks with separate files and contexts;
+- work whose output would bloat the planner's context;
+- a different runtime or model, e.g. an independent Codex reviewer;
+- an explicit user request for workers.
+
 ## Planner loop
 
-1. Split the user's objective into scoped tasks with acceptance criteria and
-   pick one worker per task. Use separate files or `herdr worktree` for
+1. Split the user's objective by context, not by problem type or team: each
+   task needs little from the others and returns a compact result. Merge
+   tightly coupled tasks (one consumes another's output, or they touch the
+   same files or data) into one worker, or keep them in the planner. Give each
+   task acceptance criteria; use separate files or `herdr worktree` for
    parallel edits to avoid conflicts.
-2. `spawn` the workers the user asked for, choosing model and effort per task,
-   then `send` each its task, or `ask` for a single sequential task.
-3. `wait`, then `read` each worker. Review the evidence against the acceptance
-   criteria; `send` corrections to the same worker when needed.
+2. `spawn` the workers the task needs or the user asked for, choosing model
+   and effort per task, then `send` each its task, or `ask` for a single
+   sequential task.
+3. `wait`, then `read` each worker. A summary is lossy: check real evidence
+   (`git diff`, run the tests or checks) against the acceptance criteria
+   instead of trusting it; `send` corrections to the same worker when needed.
 4. Report the combined result to the user, then `stop <team>` to close the
    team workspace.
 
