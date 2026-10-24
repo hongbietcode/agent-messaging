@@ -44,11 +44,10 @@ team_workspace() {
      | .workspace_id) // empty'
 }
 
-# Panes of a workspace in creation order: pane, tab, agent, cwd.
+# Panes of a workspace: pane, tab, agent, cwd. Herdr IDs are opaque (e.g. "w4:pN"),
+# so never derive order from them.
 team_panes() {
-  herdr pane list --workspace "$1" | jq -c '[.result.panes[]
-    | {pane: .pane_id, tab: .tab_id, agent, cwd, n: (.pane_id | split(":p")[1] | tonumber)}]
-    | sort_by(.n)[]'
+  herdr pane list --workspace "$1" | jq -c '.result.panes[] | {pane: .pane_id, tab: .tab_id, agent, cwd}'
 }
 
 # Pick the pane for the next worker: a fresh workspace or tab root, a free shell in
