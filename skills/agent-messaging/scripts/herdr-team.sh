@@ -27,10 +27,13 @@ EOF
 command=$1 team=$2
 shift 2
 
-# Worker rows of this team: name, pane_id, agent kind, status.
+# Worker rows of this team: name, pane_id, agent kind, status. Matching the
+# team workspace too keeps team "demo" from picking up "demo-x-be" of team "demo-x";
+# workers started outside a team workspace fall back to the name prefix alone.
 workers() {
-  herdr agent list | jq -c --arg prefix "$team-" \
+  herdr agent list | jq -c --arg prefix "$team-" --arg ws "$(team_workspace)" \
     '.result.agents[] | select((.name // "") | startswith($prefix))
+     | select($ws == "" or .workspace_id == $ws)
      | {name, pane: .pane_id, kind: .agent, status: .agent_status}'
 }
 
